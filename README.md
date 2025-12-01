@@ -10,10 +10,18 @@ Project folder Structure:
     - gp_function.py
     - gp_node.py 
     - gp_tree.py
+    - constant.py 
+- graph_builder
+    - __init__.py 
+    - dot_converter.py 
+    - graph_builder.py
 
 File DEscription: 
 
 1. gp_function.py : contains a function class GPFunction which will be used for creating the functions. 
 2. gp_node.py : contains a node class GPNode which is the building block for a tree and can be used for both a terminal and a function node for a tree. 
 3. gp_tree.py : contains a tree class GPTree which will act as the individuals for genetic algorithem programs. 
+4. constant.py : made for storing repeataive strings 
+5. dot_converter.py: takes tree representation in string format and returns a dot represenation.
+6. graph_builder.py: retruns a image of a graph using graphviz based on dot represenation.
 

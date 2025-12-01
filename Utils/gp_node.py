@@ -1,4 +1,4 @@
-from gp_function import GPFunction
+from .gp_function import GPFunction
 
 class GPNode:
 
