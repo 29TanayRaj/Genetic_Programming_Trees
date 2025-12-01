@@ -16,3 +16,6 @@ venv/
 *.log
 .idea/
 .vscode/
+
+# testing files 
+.ipynb
