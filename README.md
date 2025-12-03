@@ -16,7 +16,7 @@ Project folder Structure:
     - dot_converter.py 
     - graph_builder.py
 
-File DEscription: 
+File Decription: 
 
 1. gp_function.py : contains a function class GPFunction which will be used for creating the functions. 
 2. gp_node.py : contains a node class GPNode which is the building block for a tree and can be used for both a terminal and a function node for a tree. 
@@ -25,3 +25,26 @@ File DEscription:
 5. dot_converter.py: takes tree representation in string format and returns a dot represenation.
 6. graph_builder.py: retruns a image of a graph using graphviz based on dot represenation.
 
+Current Challenges:
+- Mutations of GP trees:
+- Need to work on the following 
+## 1. Point Mutation
+- A single node in the GP tree is mutated
+- Terminal nodes are replaced by other terminals
+- Function nodes are replaced by other functions
+- A threshold is used to decide whether to mutate the selected node
+- Node is selected randomly from the GP tree
+
+## 2. Subtree Mutation
+- A randomly selected node is replaced with a newly generated subtree
+- New subtree is generated using standard GP initialization methods (grow/full/RHH)
+- Depth limits are applied to avoid excessive tree bloat
+- Node selection is random — uniform or depth-biased
+- Produces large structural changes and increases exploration
+
+## 3. Hoist Mutation
+- Select a subtree, then select a smaller subtree inside it and “hoist” it upwards
+- The smaller internal subtree replaces the larger subtree
+- Helps reduce tree size and control bloat
+- Node and internal subtree selections are random
+- Encourages simpler, more general GP trees

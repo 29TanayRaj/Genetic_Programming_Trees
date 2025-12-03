@@ -47,16 +47,45 @@ class GPTree:
     def _choose_random_element(ele_list):
         return random.choice(ele_list)
 
-    def eval_tree(self):
-        pass 
+    def eval_tree(self,**kwargs):
+        
+        if self.root is None:
+            raise ValueError("Cannot evaluate an empty tree")
+        
+        return self._eval_recursive(self.root, **kwargs)
+    
+    def _eval_recursive(self, node: GPNode, **kwargs):
 
-    def prefix_rep(self):
-        pass 
+        # Terminal node
+        if not node.is_function():
+            
+            if isinstance(node.value, str) and node.value in kwargs:
+                return kwargs[node.value]
+            return node.value
+        
+        evaluated_args = [self._eval_recursive(child, **kwargs) for child in node.next]
+
+        return node.value(*evaluated_args)
+
 
     def copy(self):
-        pass
 
-    def mutate_point(self):
+        new_tree = GPTree(self.func_set, self.term_set)
+
+        if self.root is not None:
+            new_tree.root = self._copy_node(self.root)
+        return new_tree
+    
+    def _copy_node(self, node: GPNode) -> GPNode:
+
+        if node is None:
+            return None
+        
+        copied_children = [self._copy_node(child) for child in node.next]
+        
+        return GPNode(node.value, next=copied_children)
+
+    def mutate_node(self):
         pass 
 
     def mutate_subtree(self):
