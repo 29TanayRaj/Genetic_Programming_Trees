@@ -4,3 +4,9 @@
 FULL = "full"
 GROW = "grow"
 
+# Mutation Techniques 
+POINT = "point"
+SUBTREE = "subtree"
+
+# Some repersenations 
+EMPTY_TREE = "<Empty Tree>"
