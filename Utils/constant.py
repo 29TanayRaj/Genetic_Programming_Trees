@@ -7,6 +7,7 @@ GROW = "grow"
 # Mutation Techniques 
 POINT = "point"
 SUBTREE = "subtree"
+HOIST = "hoist"
 
 # Some repersenations 
 EMPTY_TREE = "<Empty Tree>"
