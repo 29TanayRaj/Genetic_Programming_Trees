@@ -12,16 +12,19 @@ I had been reading the book "A Field Guide to Genetic Programming" by Nicholas F
 
 ```
 Tree Based Genetic Programming/
+├── genetic_algorithm/
+│   ├── __init__.py
+│   └── population.py     # Population management
+├── graph_builder/
+│   ├── __init__.py
+│   ├── dot_converter.py  # Convert trees to DOT format
+│   └── graph_builder.py  # Generate tree visualizations
 ├── utils/
 │   ├── __init__.py
 │   ├── gp_function.py    # Function wrapper class
 │   ├── gp_node.py        # Tree node class
 │   ├── gp_tree.py        # Main GP tree class
 │   └── constant.py       # Constants and configuration
-├── graph_builder/
-│   ├── __init__.py
-│   ├── dot_converter.py  # Convert trees to DOT format
-│   └── graph_builder.py  # Generate tree visualizations
 └── README.md
 ```
 
@@ -35,6 +38,8 @@ Tree Based Genetic Programming/
 4. **constant.py**: Stores repetitive string constants used throughout the project
 5. **dot_converter.py**: Takes tree representation in string format and returns a DOT representation
 6. **graph_builder.py**: Returns an image of a graph using Graphviz based on DOT representation
+7. **population.py**: Manages a population of `GPTree` individuals
+8. **loss_function.py**: Contains standard loss functions (MSE, MAE, etc.) for fitness evaluation
 
 ---
 
@@ -270,32 +275,37 @@ Converts the tree to infix notation for better readability.
 print(tree.to_infix())  # Output: ((x * 2.5) + y)
 ```
 
+### 4. GAPopulation (`genetic_algorithm/population.py`)
+
+Manages a population of `GPTree` individuals.
+
+#### Parameters:
+- **population_size** (`int`): Number of individuals in the population. Default: `500`
+
+#### Methods:
+- **`initialize(...)`**: Initializes the population using Ramped Half-and-Half method.
+- **`evaluate(data, target_values, loss_function)`**: Evaluates fitness of all individuals using vectorized operations.
+
 ---
 
-## Constants (`constant.py`)
+### 5. Loss Functions (`utils/loss_function.py`)
 
-Predefined constants used throughout the project:
-
-### Tree Construction Methods:
-- **FULL** = `"full"` - Full initialization method
-- **GROW** = `"grow"` - Grow initialization method
-
-### Mutation Techniques:
-- **POINT** = `"point"` - Point mutation
-- **SUBTREE** = `"subtree"` - Subtree mutation
-- **HOIST** = `"hoist"` - Hoist mutation
-
-### Representations:
-- **EMPTY_TREE** = `"<Empty Tree>"` - Representation for empty trees
+Standard loss functions implemented using `numpy` for performance:
+- **`mse(predicted, actual)`**: Mean Squared Error
+- **`mae(predicted, actual)`**: Mean Absolute Error
+- **`rmse(predicted, actual)`**: Root Mean Squared Error
+- **`log_cosh(predicted, actual)`**: Log Cosh Loss
 
 ---
 
 ## Usage Example
 
 ```python
+import numpy as np
 from utils.gp_tree import GPTree
 from utils.gp_function import GPFunction
-from utils import constant
+from utils import constant, loss_function
+from genetic_algorithm.population import GAPopulation
 
 # Define function set
 func_set = [
@@ -304,35 +314,33 @@ func_set = [
     GPFunction('-', lambda x, y: x - y, 2),
 ]
 
-# Create tree with ERCs
-tree = GPTree(
+# 1. Initialize Population
+pop = GAPopulation(population_size=50)
+pop.initialize(
     func_set=func_set,
-    variables=['x', 'y'],
+    variables=['x'],
     use_erc=True,
-    erc_range=(-5.0, 5.0)
+    erc_range=(-5.0, 5.0),
+    min_depth=2,
+    max_depth=5
 )
 
-# Initialize randomly
-tree.random_init(min_d=2, max_d=4, method=constant.GROW)
+# 2. Prepare Data (using numpy)
+# Target function: y = x^2 + 2x
+data = [{'x': i} for i in np.linspace(-5, 5, 20)]
+target_values = np.array([d['x']**2 + 2*d['x'] for d in data])
 
-# Display tree
-print("Prefix:", tree)
-print("Infix:", tree.to_infix())
+# 3. Evaluate Fitness
+pop.evaluate(
+    data=data,
+    target_values=target_values,
+    loss_function=loss_function.mse
+)
 
-# Evaluate
-result = tree.eval_tree(x=2.0, y=3.0)
-print(f"Result: {result}")
-
-# Mutate
-tree.mutate(constant.POINT)
-print("After mutation:", tree.to_infix())
-
-# Copy
-tree_copy = tree.copy()
-
-# Get statistics
-print(f"Depth: {tree.get_depth()}")
-print(f"Nodes: {tree.count_nodes()}")
+# 4. Inspect Best Individual
+best_tree = min(pop.population, key=lambda t: t.fitness)
+print(f"Best Fitness: {best_tree.fitness}")
+print(f"Best Tree: {best_tree}")
 ```
 
 ---
@@ -340,11 +348,11 @@ print(f"Nodes: {tree.count_nodes()}")
 ## Features
 
  **Tree Initialization**: FULL and GROW methods  
+ **Ramped Half-and-Half**: Diverse population initialization  
+ **Vectorized Evaluation**: Fast fitness calculation using `numpy`  
  **Ephemeral Random Constants (ERCs)**: Automatically generated learnable constants  
  **Multiple Mutation Types**: Point, Subtree, and Hoist mutations  
- **Tree Evaluation**: Support for variables and constants  
- **Tree Copying**: Deep copy with preserved structure  
- **Multiple Representations**: Prefix and infix notation  
+ **Standard Loss Functions**: MSE, MAE, RMSE, Log Cosh  
  **Bloat Control**: Hoist mutation helps reduce tree size  
  **Type Safety**: Distinction between variables and learnable constants
 
@@ -353,8 +361,6 @@ print(f"Nodes: {tree.count_nodes()}")
 ## Future Enhancements
 
 - Crossover operations for recombination
-- Fitness evaluation framework
-- Population management
-- Selection operators
+- Selection operators (Tournament, Roulette Wheel)
 - Symbolic regression examples
 - Advanced bloat control mechanisms

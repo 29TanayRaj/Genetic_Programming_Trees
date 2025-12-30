@@ -26,6 +26,7 @@ class GPTree:
         self.use_erc = use_erc
         self.erc_range = erc_range
         self.root = root
+        self.fitness = None
      
     def random_init(self, min_d: int, max_d: int, method: str) -> GPNode:
         if method.lower() not in (constant.FULL, constant.GROW):
