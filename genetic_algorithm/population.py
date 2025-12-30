@@ -6,8 +6,6 @@ import random
 import numpy as np
 from typing import List, Union, Iterable
 
-
-
 class GAPopulation:
 
     def __init__(self, population_size =500):

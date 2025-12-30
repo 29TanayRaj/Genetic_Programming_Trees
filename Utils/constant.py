@@ -11,3 +11,11 @@ HOIST = "hoist"
 
 # Some repersenations 
 EMPTY_TREE = "<Empty Tree>"
+
+# Loss Metrics
+MSE = "mse"
+MAE = "mae"
+RMSE = "rmse"
+LOG_COSH = "log_cosh"
+
+

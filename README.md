@@ -14,7 +14,13 @@ I had been reading the book "A Field Guide to Genetic Programming" by Nicholas F
 Tree Based Genetic Programming/
 ├── genetic_algorithm/
 │   ├── __init__.py
-│   └── population.py     # Population management
+│   ├── population.py     # Population management
+│   ├── selection.py      # Selection operators (Tournament)
+│   ├── crossover.py      # Crossover operators (Subtree)
+│   └── evolution.py      # Evolution Engine (Main Loop)
+├── symbolic_regression/
+│   ├── __init__.py
+│   └── estimator.py      # Scikit-learn compatible regressor
 ├── graph_builder/
 │   ├── __init__.py
 │   ├── dot_converter.py  # Convert trees to DOT format
@@ -39,13 +45,60 @@ Tree Based Genetic Programming/
 5. **dot_converter.py**: Takes tree representation in string format and returns a DOT representation
 6. **graph_builder.py**: Returns an image of a graph using Graphviz based on DOT representation
 7. **population.py**: Manages a population of `GPTree` individuals
-8. **loss_function.py**: Contains standard loss functions (MSE, MAE, etc.) for fitness evaluation
+8. **selection.py**: Implements selection mechanisms (Tournament Selection)
+9. **crossover.py**: Implements crossover operations (Subtree Crossover)
+10. **evolution.py**: Contains the `EvolutionEngine` that drives the evolutionary process
+11. **estimator.py**: Contains the `SymbolicRegressor` class for high-level usage
+12. **loss_function.py**: Contains standard loss functions (MSE, MAE, etc.) for fitness evaluation
 
 ---
 
 ## Class Documentation
 
-### 1. GPFunction (`gp_function.py`)
+### 1. SymbolicRegressor (`symbolic_regression.estimator`)
+
+A high-level scikit-learn compatible estimator for symbolic regression.
+
+#### Parameters:
+- **population_size** (`int`): Number of individuals. Default: 1000
+- **generations** (`int`): Number of generations. Default: 20
+- **tournament_size** (`int`): Size for tournament selection. Default: 20
+- **crossover_rate** (`float`): Probability of crossover. Default: 0.9
+- **mutation_rate** (`float`): Probability of mutation. Default: 0.1
+- **loss_metric** (`str`): Loss metric ('mse', 'mae', 'rmse', 'log_cosh'). Default: 'mse'
+
+#### Methods:
+- **`fit(X, y)`**: Fits the model to data. X should be shape (n_samples, n_features).
+- **`predict(X)`**: Predicts targets for X.
+
+#### Example:
+```python
+from symbolic_regression.estimator import SymbolicRegressor
+import numpy as np
+
+X = np.random.rand(100, 2)
+y = X[:, 0] + X[:, 1]  # Target: x0 + x1
+
+est = SymbolicRegressor(generations=10, population_size=500, verbose=True)
+est.fit(X, y)
+
+print(est.predict(np.array([[0.5, 0.5]]))) # Should be close to 1.0
+```
+
+---
+
+### 2. EvolutionEngine (`genetic_algorithm.evolution`)
+
+Orchestrates the evolutionary process.
+
+#### Methods:
+- **`evolve(data, target_values, loss_function, generations)`**: Runs the main loop:
+  1. Elitism (preserves best individuals)
+  2. Tournament Selection
+  3. Crossover & Mutation
+  4. Evaluation & Statistics
+
+### 3. GPFunction (`gp_function.py`)
 
 Wrapper class for functions used in genetic programming trees.
 
@@ -66,7 +119,7 @@ result = add_func(3, 5)  # Returns 8
 
 ---
 
-### 2. GPNode (`gp_node.py`)
+### 4. GPNode (`gp_node.py`)
 
 Represents a single node in a genetic programming tree. Can be either a function node or a terminal node.
 
@@ -111,7 +164,7 @@ erc_node = GPNode(3.14159, is_learnable=True)
 
 ---
 
-### 3. GPTree (`gp_tree.py`)
+### 5. GPTree (`gp_tree.py`)
 
 Main class representing a complete genetic programming tree. This is the individual in a GP population.
 
@@ -275,7 +328,7 @@ Converts the tree to infix notation for better readability.
 print(tree.to_infix())  # Output: ((x * 2.5) + y)
 ```
 
-### 4. GAPopulation (`genetic_algorithm/population.py`)
+### 6. GAPopulation (`genetic_algorithm/population.py`)
 
 Manages a population of `GPTree` individuals.
 
@@ -288,60 +341,13 @@ Manages a population of `GPTree` individuals.
 
 ---
 
-### 5. Loss Functions (`utils/loss_function.py`)
+### 7. Loss Functions (`utils/loss_function.py`)
 
 Standard loss functions implemented using `numpy` for performance:
 - **`mse(predicted, actual)`**: Mean Squared Error
 - **`mae(predicted, actual)`**: Mean Absolute Error
 - **`rmse(predicted, actual)`**: Root Mean Squared Error
 - **`log_cosh(predicted, actual)`**: Log Cosh Loss
-
----
-
-## Usage Example
-
-```python
-import numpy as np
-from utils.gp_tree import GPTree
-from utils.gp_function import GPFunction
-from utils import constant, loss_function
-from genetic_algorithm.population import GAPopulation
-
-# Define function set
-func_set = [
-    GPFunction('+', lambda x, y: x + y, 2),
-    GPFunction('*', lambda x, y: x * y, 2),
-    GPFunction('-', lambda x, y: x - y, 2),
-]
-
-# 1. Initialize Population
-pop = GAPopulation(population_size=50)
-pop.initialize(
-    func_set=func_set,
-    variables=['x'],
-    use_erc=True,
-    erc_range=(-5.0, 5.0),
-    min_depth=2,
-    max_depth=5
-)
-
-# 2. Prepare Data (using numpy)
-# Target function: y = x^2 + 2x
-data = [{'x': i} for i in np.linspace(-5, 5, 20)]
-target_values = np.array([d['x']**2 + 2*d['x'] for d in data])
-
-# 3. Evaluate Fitness
-pop.evaluate(
-    data=data,
-    target_values=target_values,
-    loss_function=loss_function.mse
-)
-
-# 4. Inspect Best Individual
-best_tree = min(pop.population, key=lambda t: t.fitness)
-print(f"Best Fitness: {best_tree.fitness}")
-print(f"Best Tree: {best_tree}")
-```
 
 ---
 
@@ -352,6 +358,8 @@ print(f"Best Tree: {best_tree}")
  **Vectorized Evaluation**: Fast fitness calculation using `numpy`  
  **Ephemeral Random Constants (ERCs)**: Automatically generated learnable constants  
  **Multiple Mutation Types**: Point, Subtree, and Hoist mutations  
+ **Advanced Evolutionary Operators**: Tournament Selection, Subtree Crossover, Elitism
+ **Symbolic Regression estimator**: Scikit-Learn compatible API
  **Standard Loss Functions**: MSE, MAE, RMSE, Log Cosh  
  **Bloat Control**: Hoist mutation helps reduce tree size  
  **Type Safety**: Distinction between variables and learnable constants
@@ -359,8 +367,5 @@ print(f"Best Tree: {best_tree}")
 ---
 
 ## Future Enhancements
-
-- Crossover operations for recombination
-- Selection operators (Tournament, Roulette Wheel)
-- Symbolic regression examples
-- Advanced bloat control mechanisms
+- Advanced bloat control mechanisms (Parsimony Pressure)
+- Multi-objective optimization (NSGA-II)
